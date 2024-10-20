@@ -104,6 +104,29 @@ Intersection BVHAccel::Intersect(const Ray& ray) const
 
 Intersection BVHAccel::getIntersection(BVHBuildNode* node, const Ray& ray) const
 {
-    // TODO Traverse the BVH to find intersection
+    Intersection result;
+    result.happened = false;
 
+    if (node == nullptr) return result;
+
+    // TODO Traverse the BVH to find intersection
+    auto t1 = (node->bounds.pMin - ray.origin) * ray.direction_inv;
+    auto t2 = (node->bounds.pMax - ray.origin) * ray.direction_inv;
+    auto t_enter = Vector3f::Min(t1, t2).max();
+    auto t_exit = Vector3f::Max(t1, t2).min();
+
+    if (t_exit < t_enter || t_exit < .0)
+        return result;
+
+    if (node->left == nullptr && node->right == nullptr){
+        result = node->object->getIntersection(ray);
+    }
+    else{
+        auto r1 = getIntersection(node->left, ray);
+        auto r2 = getIntersection(node->right, ray);
+        
+        result = r1.happened ? r1 : r2;
+    }
+
+    return result;
 }

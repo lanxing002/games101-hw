@@ -31,6 +31,9 @@ public:
     double&      operator[](int index);
 
 
+    double min() { return std::min(x, std::min(y, z)); }
+    double max() { return std::max(x, std::max(y, z)); }
+
     static Vector3f Min(const Vector3f &p1, const Vector3f &p2) {
         return Vector3f(std::min(p1.x, p2.x), std::min(p1.y, p2.y),
                        std::min(p1.z, p2.z));

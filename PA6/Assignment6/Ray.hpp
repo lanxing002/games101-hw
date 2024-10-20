@@ -5,6 +5,8 @@
 #ifndef RAYTRACING_RAY_H
 #define RAYTRACING_RAY_H
 #include "Vector.hpp"
+#include <cassert>
+
 struct Ray{
     //Destination = origin + t*direction
     Vector3f origin;
@@ -13,6 +15,7 @@ struct Ray{
     double t_min, t_max;
 
     Ray(const Vector3f& ori, const Vector3f& dir, const double _t = 0.0): origin(ori), direction(dir),t(_t) {
+        assert(direction.x != 0.0 && direction.y != .0 && direction.z != .0);
         direction_inv = Vector3f(1./direction.x, 1./direction.y, 1./direction.z);
         t_min = 0.0;
         t_max = std::numeric_limits<double>::max();
