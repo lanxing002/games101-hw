@@ -124,8 +124,12 @@ Intersection BVHAccel::getIntersection(BVHBuildNode* node, const Ray& ray) const
     else{
         auto r1 = getIntersection(node->left, ray);
         auto r2 = getIntersection(node->right, ray);
-        
-        result = r1.happened ? r1 : r2;
+        if (r1.happened && r2.happened)
+            result = r1.distance < r2.distance ? r1 : r2;
+        else if (r1.happened)
+            result = r1;
+        else if (r2.happened)
+            result = r2;
     }
 
     return result;
