@@ -53,12 +53,43 @@ bool Scene::trace(
         }
     }
 
-
     return (*hitObject != nullptr);
 }
 
 // Implementation of Path Tracing
 Vector3f Scene::castRay(const Ray &ray, int depth) const
 {
+    // position in main scene
+    auto pos = intersect(ray);
+    if (!pos.happened) return Vector3f(.0, .0, .0);
+
+    Vector3f c =  pos.happened ? (pos.normal + 1) * 0.5 : Vector3f(.0, .0, .0);
+    
+    // direct light
+    {
+        float pdf = 0.0;
+        Vector3f l{.0, .0, .0};
+        Intersection lightInter;
+        sampleLight(lightInter, pdf);
+        Vector3f ws = (lightInter.coords - pos.coords);
+        Ray lightRay{ pos.coords, ws};
+        auto pToLight = intersect(lightRay);
+        if (!pToLight.happened || pToLight.obj->hasEmit() ){
+            l += lightInter.emit * dotProduct(ws, pos.normal) * dotProduct(ws, lightInter.normal);
+            l = l / std::max((lightInter.coords - pos.coords).norm(), 1.0f) / pdf;
+            l = l * pos.m->eval(ray.direction, ws, pos.normal);
+        }
+
+        return l;
+        //if(lightObj)
+
+        //// blocked
+        //if (lightObj != nullptr && lightObj == pToLight.obj){
+        //}
+    }
+
+
+
     // TO DO Implement Path Tracing Algorithm here
+    return c;
 }
