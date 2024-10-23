@@ -60,36 +60,58 @@ bool Scene::trace(
 Vector3f Scene::castRay(const Ray &ray, int depth) const
 {
     // position in main scene
-    auto pos = intersect(ray);
-    if (!pos.happened) return Vector3f(.0, .0, .0);
+    auto ret = Vector3f(.0, .0, .0);
+    if (depth > 1) return ret;
 
-    Vector3f c =  pos.happened ? (pos.normal + 1) * 0.5 : Vector3f(.0, .0, .0);
+
+    auto pos = intersect(ray);
+    if (!pos.happened) return ret;
+    if (pos.m->hasEmission()) return pos.emit;
+
+    auto wo = -ray.direction.normalized();
+    auto n = pos.normal.normalized();
+
+    ret = (n + 1) * 0.5;
     
+    //return (wo + 1) * 0.5;
     // direct light
     {
         float pdf = 0.0;
-        Vector3f l{.0, .0, .0};
         Intersection lightInter;
         sampleLight(lightInter, pdf);
-        Vector3f ws = (lightInter.coords - pos.coords);
+        Vector3f ws = (lightInter.coords - pos.coords).normalized();
+        //return (ws + 1.0) * 0.5 * 0.5;
         Ray lightRay{ pos.coords, ws};
         auto pToLight = intersect(lightRay);
-        if (!pToLight.happened || pToLight.obj->hasEmit() ){
-            l += lightInter.emit * dotProduct(ws, pos.normal) * dotProduct(ws, lightInter.normal);
-            l = l / std::max((lightInter.coords - pos.coords).norm(), 1.0f) / pdf;
+        if (pToLight.happened && pToLight.obj->hasEmit() ){
+            auto l = lightInter.emit * dotProduct(ws, n) * dotProduct(-ws, lightInter.normal.normalized());
+            auto v = lightInter.coords - pos.coords;
+            l = l / std::max(dotProduct(v, v), 1.0f) / pdf;
             l = l * pos.m->eval(ray.direction, ws, pos.normal);
+            ret = l;
+            ret = Vector3f(.0, .0, .0);
         }
-
-        return l;
-        //if(lightObj)
-
-        //// blocked
-        //if (lightObj != nullptr && lightObj == pToLight.obj){
-        //}
+    }
+    return ret;
+    // indirect light
+    {
+        auto russianP = get_random_float();
+        if (russianP < 0.4)
+        {
+            auto wi = pos.m->sample(wo, n).normalized();
+            Ray indirRay{ pos.coords, wi };
+            auto pToScene = intersect(indirRay);
+            // 直接光的贡献已经计算，只计算间接光
+            if (pToScene.happened && !pToScene.obj->hasEmit()) {
+                auto l = castRay(indirRay, depth + 1);
+                //std::cout << "ll " << l << std::endl;
+                l = l * pos.m->eval(wo, wi, n) * dotProduct(wi, n);
+                l = l / pos.m->pdf(wi, wo, n) / 0.4;
+                ret += l;
+            }
+        }
     }
 
-
-
     // TO DO Implement Path Tracing Algorithm here
-    return c;
+    return ret;
 }

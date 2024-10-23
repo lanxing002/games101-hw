@@ -19,7 +19,7 @@ public:
     Vector3f operator / (const float &r) const { return Vector3f(x / r, y / r, z / r); }
 
     float norm() {return std::sqrt(x * x + y * y + z * z);}
-    Vector3f normalized() {
+    Vector3f normalized() const {
         float n = std::sqrt(x * x + y * y + z * z);
         return Vector3f(x / n, y / n, z / n);
     }
