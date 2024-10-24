@@ -89,7 +89,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
     // indirect light
     {
         auto russianP = get_random_float();
-        if (russianP < 0.4)
+        if (russianP < 0.7)
         {
             auto wi = pos.m->sample(wo, n).normalized();
             Ray indirRay{ pos.coords + wi * 0.0001, wi };
@@ -99,7 +99,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
                 auto l = castRay(indirRay, depth + 1);
                 //std::cout << "ll " << l << std::endl;
                 l = l * pos.m->eval(wo, wi, n) * dotProduct(wi, n);
-                l = l / pos.m->pdf(wi, wo, n) / 0.4;
+                l = l / pos.m->pdf(wi, wo, n) / 0.7;
                 ret += l;
             }
         }
