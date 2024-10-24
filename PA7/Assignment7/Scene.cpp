@@ -61,19 +61,14 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 {
     // position in main scene
     auto ret = Vector3f(.0, .0, .0);
-    if (depth > 1) return ret;
-
 
     auto pos = intersect(ray);
     if (!pos.happened) return ret;
-    if (pos.m->hasEmission()) return pos.emit;
+    if (pos.m->hasEmission()) return pos.m->getEmission();
 
     auto wo = -ray.direction.normalized();
     auto n = pos.normal.normalized();
 
-    ret = (n + 1) * 0.5;
-    
-    //return (wo + 1) * 0.5;
     // direct light
     {
         float pdf = 0.0;
@@ -81,7 +76,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
         sampleLight(lightInter, pdf);
         Vector3f ws = (lightInter.coords - pos.coords).normalized();
         //return (ws + 1.0) * 0.5 * 0.5;
-        Ray lightRay{ pos.coords, ws};
+        Ray lightRay{ pos.coords + ws * 0.0001, ws};
         auto pToLight = intersect(lightRay);
         if (pToLight.happened && pToLight.obj->hasEmit() ){
             auto l = lightInter.emit * dotProduct(ws, n) * dotProduct(-ws, lightInter.normal.normalized());
@@ -89,17 +84,15 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
             l = l / std::max(dotProduct(v, v), 1.0f) / pdf;
             l = l * pos.m->eval(ray.direction, ws, pos.normal);
             ret = l;
-            ret = Vector3f(.0, .0, .0);
         }
     }
-    return ret;
     // indirect light
     {
         auto russianP = get_random_float();
         if (russianP < 0.4)
         {
             auto wi = pos.m->sample(wo, n).normalized();
-            Ray indirRay{ pos.coords, wi };
+            Ray indirRay{ pos.coords + wi * 0.0001, wi };
             auto pToScene = intersect(indirRay);
             // 直接光的贡献已经计算，只计算间接光
             if (pToScene.happened && !pToScene.obj->hasEmit()) {
